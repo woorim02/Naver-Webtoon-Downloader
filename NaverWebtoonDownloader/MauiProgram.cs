@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MudBlazor.Services;
 using NaverWebtoonDownloader.Data;
 
 namespace NaverWebtoonDownloader
@@ -17,6 +18,7 @@ namespace NaverWebtoonDownloader
                 });
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddMudServices();
 
             using (var context = new AppDbContext())
             {
