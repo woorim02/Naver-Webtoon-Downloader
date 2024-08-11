@@ -11,8 +11,8 @@
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)  
 
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/woorim02/Naver-Webtoon-Downloader?label=latest&style=flat-square)](https://github.com/wr-rainforest/Naver-Webtoon-Downloader/releases/latest)
-[![GitHub All Releases](https://img.shields.io/github/downloads/woorim02/Naver-Webtoon-Downloader/total?label=downloads&style=flat-square)](https://github.com/wr-rainforest/Naver-Webtoon-Downloader/releases)  
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/woorim02/Naver-Webtoon-Downloader?label=latest&style=flat-square)](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/latest)
+[![GitHub All Releases](https://img.shields.io/github/downloads/woorim02/Naver-Webtoon-Downloader/total?label=downloads&style=flat-square)](https://github.com/woorim02/Naver-Webtoon-Downloader/releases)  
 
 .NET MAUI Blazor Hybrid 로 개발된 네이버 웹툰 다운로더입니다.  
 뷰어가 내장되어 있어 다운로드한 웹툰을 바로 볼 수 있습니다.  
