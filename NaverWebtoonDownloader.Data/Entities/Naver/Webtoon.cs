@@ -2,6 +2,10 @@
 
 public class Webtoon
 {
+    /// <summary>
+    /// 기본값 false
+    /// </summary>
+    public bool IsViewOnly { get; set; } = false;
     public int ID { get; set; }
     public string Title { get; set; }
     public List<string> UpdateDays { get; set; }
@@ -10,5 +14,5 @@ public class Webtoon
     public bool IsEnd { get; set; }
     public bool IsFree { get; set; }
     public List<string> Authors { get; set; }
-    public List<Episode> Episodes { get; set; }
+    public List<Episode> Episodes { get; set; } = new List<Episode> { };
 }

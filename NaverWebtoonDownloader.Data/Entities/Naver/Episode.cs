@@ -9,5 +9,5 @@ public class Episode
     public string Title { get; set; }
     public double StarScore { get; set; }
     public DateTime Date { get; set; }
-    public List<Image> Images { get; set; }
+    public List<Image> Images { get; set; } = new List<Image> { };
 }

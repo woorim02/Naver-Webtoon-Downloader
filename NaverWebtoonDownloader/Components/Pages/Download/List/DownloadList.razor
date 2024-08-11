@@ -1,0 +1,202 @@
+﻿@page "/download/list"
+@inject NavigationManager Navigation
+@inject AppDbContext DbContext
+@inject NaverWebtoonDownloader.Apis.NaverWebtoonApi api
+@inject IDialogService DialogService
+@inject IJSRuntime JsRuntime
+@inject IServiceProvider ServiceProvider
+
+@using Microsoft.EntityFrameworkCore
+@using NaverWebtoonDownloader
+@using NaverWebtoonDownloader.Data
+@using NaverWebtoonDownloader.Entities.Naver
+@using NaverWebtoonDownloader.Services
+
+<MudDataGrid Class="h-100" T="WebtoonDownloadStatus" MultiSelection="true" Dense="true" Striped="true" Bordered="true" Hover="true"
+             Items="@WebtoonDownloadStatuses">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6" Style="font-weight:600">다운로드 목록</MudText>
+        <MudSpacer />
+        <MudIconButton Icon="@(IsRunnning ? Icons.Material.Filled.Pause : @Icons.Material.Filled.PlayArrow)" Color="Color.Primary" OnClick="(e)=>OnControlButtonClicked()"></MudIconButton>
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Property="x => x.Title" Title="웹툰" CellStyle="font-weight: 700;"/>
+        <PropertyColumn Property="x => JoinAuthors(x.Authors)" Title="작가" />
+        <PropertyColumn Property="x => x.LatestEpisodeTitle" Title="최신 회차" />
+        <PropertyColumn Property="x => x.Episodes.Count()" Title="총 회차수" />
+        <TemplateColumn Title="진행 상황">
+            <CellTemplate>
+                <div style="position: relative; width: 100%;">
+                    <MudProgressLinear Value="@(context.Item.Progress * 100)" Style="height: 20px;" Color="Color.Primary"/>
+
+                    <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        @context.Item.DownLoadedImages / @context.Item.TotalImages
+                    </div>
+                </div>
+            </CellTemplate>
+        </TemplateColumn>
+        <PropertyColumn Property="x => x.StatusText" Title="상태" />
+        <TemplateColumn>
+            <CellTemplate>
+                <MudIconButton Icon="@Icons.Material.Filled.Delete" Style="padding:0" Color="Color.Error" OnClick="(e)=>OnDeleteButtonClicked(context.Item)"></MudIconButton>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private static List<WebtoonDownloadStatus> WebtoonDownloadStatuses = new List<WebtoonDownloadStatus>();
+    public bool IsRunnning => !cts?.IsCancellationRequested ?? false;
+
+    CancellationTokenSource? cts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (WebtoonDownloadStatuses.Count != 0)
+        {
+            return;
+        }
+        var webtoons = await DbContext.NaverWebtoons
+        .Where(x => !x.IsViewOnly)
+        .Include(w => w.Episodes)
+        .ThenInclude(e => e.Images)
+        .ToListAsync();
+        WebtoonDownloadStatuses = webtoons.Select(x => new WebtoonDownloadStatus(x)).ToList();
+    }
+
+    private async void OnControlButtonClicked()
+    {
+        if (IsRunnning)
+        {
+            cts?.Cancel();
+            return;
+        }
+        cts = new CancellationTokenSource();
+        var service = new WebtoonDownloadService(api, ServiceProvider);
+        var invokeStateChanged = async () =>
+        {
+            await InvokeAsync(StateHasChanged);
+        };
+        var downloadStatusChanged = async (Webtoon webtoon, string str) =>
+        {
+            var status = (WebtoonDownloadStatus)webtoon;
+            status.StatusText = str;
+            await invokeStateChanged();
+        };
+        Thread thread = new Thread(new ThreadStart((async () =>
+        {
+
+            foreach (var webtoon in WebtoonDownloadStatuses)
+            {
+                try
+                {
+                    if (cts?.IsCancellationRequested ?? true) throw new TaskCanceledException();
+                    await service.FetchWebtoonDbAsync(webtoon, cts.Token, downloadStatusChanged, invokeStateChanged);
+                    await service.DownloadImagesAsync(webtoon, cts.Token, downloadStatusChanged, invokeStateChanged);
+                }
+                catch (TaskCanceledException)
+                {
+                    break;
+                }
+                catch (Exception e)
+                {
+                    webtoon.StatusText = "오류 발생";
+                    break;
+                }
+            }
+            cts.Cancel();
+            cts = null;
+            await invokeStateChanged();
+        })));
+        thread.Start();
+    }
+
+    
+
+    private async void OnDeleteButtonClicked(WebtoonDownloadStatus webtoonStatus)
+    {
+        if (IsRunnning)
+        {
+            bool confirmed = await JsRuntime.InvokeAsync<bool>("confirm", "다운로드 대기열에서 웹툰을 삭제하려면 먼저 다운로드를 중지해주세요.");
+            return;
+        }
+        var parameters = new DialogParameters
+        {
+            { "ContentText", "다운로드 대기열에서 웹툰을 삭제할까요?" },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error }
+        };
+
+        var dialog = DialogService.Show<DialogTemplate>("Delete Confirmation", parameters);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled ?? false)
+        {
+            WebtoonDownloadStatuses.Remove(webtoonStatus);
+            var webtoon = await DbContext.NaverWebtoons.FindAsync(webtoonStatus.ID);
+            webtoon.IsViewOnly = true;
+            DbContext.NaverWebtoons.Update(webtoon);
+            await DbContext.SaveChangesAsync();
+        }
+        StateHasChanged();
+    }
+
+    string JoinAuthors(IEnumerable<string> strings)
+    => string.Join(", ", strings);
+
+    class WebtoonDownloadStatus : Webtoon
+    {
+        public string LatestEpisodeTitle => Episodes.OrderBy(x => x.No).LastOrDefault()?.Title ?? "-";
+        private string _statusText = "";
+        public string StatusText
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(_statusText))
+                    return _statusText;
+                return "다운로드 대기중";
+            }
+            set
+            {
+                _statusText = value;
+            }
+        }
+        public int DownLoadedImages
+            => Episodes.SelectMany(x => x.Images)
+                       .Where(x => x.IsDownloaded)
+                       .Count();
+
+        public int TotalImages
+            => Episodes.Select(x => x.Images.Count).Sum();
+
+        public double Progress
+        {
+            get
+            {
+                if (TotalImages == 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    return (double)DownLoadedImages / TotalImages;
+                }
+            }
+        }
+
+
+        public WebtoonDownloadStatus(Webtoon webtoon)
+        {
+            this.IsViewOnly = webtoon.IsViewOnly;
+            this.ID = webtoon.ID;
+            this.Title = webtoon.Title;
+            this.UpdateDays = new List<string>(webtoon.UpdateDays);
+            this.Url = webtoon.Url;
+            this.Thumbnail = webtoon.Thumbnail;
+            this.IsEnd = webtoon.IsEnd;
+            this.IsFree = webtoon.IsFree;
+            this.Authors = new List<string>(webtoon.Authors);
+            this.Episodes = new List<Episode>(webtoon.Episodes);
+        }
+    }
+}

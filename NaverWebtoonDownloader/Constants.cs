@@ -12,6 +12,7 @@ public class Constants
     public readonly static string CONNECTION_STRING
         = $"Data Source = {Path.Combine(FileSystem.AppDataDirectory, "appdb.sqlite")}; Mode=ReadWriteCreate; Cache=Shared;";
 #else
-    public const string CONNECTION_STRING = $"Data Source = appdb.sqlite; Mode=ReadWriteCreate; Cache=Shared;";
+    public static string CONNECTION_STRING
+        = $"Data Source={Path.Combine(Preferences.Default.Get("DOWNLOAD_FOLDER_PATH", ""), "appdb.sqlite")}; Mode=ReadWriteCreate; Cache=Shared;";
 #endif
 }

@@ -1,37 +1,92 @@
 ﻿@page "/"
+@inject NaverWebtoonDownloader.Apis.NaverWebtoonApi api
+@using NaverWebtoonDownloader.Entities.Naver
 
-<MudContainer Class="mt-16 px-8" MaxWidth="MaxWidth.False">
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6">
-            <MudGrid>
-                <MudItem xs="12">
-                    <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-                </MudItem>
-                <MudItem xs="12">
-                    <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-                </MudItem>
-            </MudGrid>
-        </MudItem>
-        <MudItem xs="12" sm="6">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 100%"></MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-        </MudItem>
-        <MudItem xs="12" sm="12" md="4">
-            <MudPaper Elevation="2" Class="pa-4" Style="height: 200px;"></MudPaper>
-        </MudItem>
+<MudContainer MaxWidth="MaxWidth.False">
+    <MudTabs @bind-ActivePanelIndex="SelectedIndex" MinimumTabWidth="20px" Elevation="4" Rounded="true" Centered="true" Color="@Color.Primary">
+        <MudTabPanel Text="일" />
+        <MudTabPanel Text="월"/>
+        <MudTabPanel Text="화" />
+        <MudTabPanel Text="수" />
+        <MudTabPanel Text="목" />
+        <MudTabPanel Text="금" />
+        <MudTabPanel Text="토" />
+    </MudTabs>
+    <MudAutocomplete T="string" Label="웹툰 제목" @bind-Value="searchValue" SearchFunc="@Search"
+                     ResetValueOnEmptyText="@resetValueOnEmptyText"
+                     CoerceText="@coerceText" CoerceValue="@coerceValue"
+                     AdornmentIcon="@Icons.Material.Filled.Search" AdornmentColor="Color.Primary" />
+    <MudGrid Class="pt-3" Spacing="3" Justify="Justify.Center">
+        @for(int i = 0; i < Webtoons.Count; i++)
+        {
+            var webtoon = Webtoons[i];
+            <MudItem>
+                <MudPaper Class="mud-card-hover" Style="max-width: 90px; padding: 0; overflow: hidden;" Elevation="0">
+                    <MudLink Href="@($"/download?webtoonId={webtoon.ID}")">
+                        <div Style="position: relative;">
+                            <MudImage Src="@webtoon.Thumbnail" Alt="@webtoon.Title" Style="width: 90px; height: 120px;" />
+                        </div>
+                    </MudLink>
+                    <div Style="padding: 3px;">
+                        <MudText Style="font-size: 0.8rem; font-weight:600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            @webtoon.Title
+                        </MudText>
+                        <MudText Style="font-size: 0.7rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                            @string.Join(", ", webtoon.Authors)
+                        </MudText>
+                    </div>
+                </MudPaper>
+            </MudItem>
+        }
     </MudGrid>
 </MudContainer>
+
+@code {
+    private DayOfWeek _selectedDay = DateTime.Now.DayOfWeek;
+    private int SelectedIndex
+    {
+        get
+        {
+            return (int)_selectedDay;
+        }
+        set
+        {
+            _selectedDay = (DayOfWeek)value;
+            DaySelected(_selectedDay);
+        }
+    }
+    private List<Webtoon> Webtoons  = new List<Webtoon>();
+    private bool resetValueOnEmptyText;
+    private bool coerceText;
+    private bool coerceValue;
+    private string searchValue = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await DaySelected(_selectedDay);
+    }
+
+    private async Task DaySelected(DayOfWeek day)
+    {
+        try
+        {
+            Console.WriteLine("홈페이지 로딩");
+            Webtoons = await api.GetWebtoonsAsync(day);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"예외 발생: {ex.Message}");
+        }
+    }
+
+    private async Task<IEnumerable<string>> Search(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+            return new string[0];
+        Webtoons = await api.GetWebtoonsAsync(value);
+        StateHasChanged();
+
+        return new string[0];
+    }
+}

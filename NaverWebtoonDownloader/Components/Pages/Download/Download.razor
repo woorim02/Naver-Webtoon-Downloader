@@ -1,0 +1,75 @@
+﻿@page "/download"
+@inject NaverWebtoonDownloader.Apis.NaverWebtoonApi api
+@inject NavigationManager Navigation
+@inject AppDbContext DbContext
+@using NaverWebtoonDownloader.Data
+@using NaverWebtoonDownloader.Entities.Naver
+
+<div style="display: flex !important" class="flex-column justify-content-center align-items-center w-100 h-100">
+    @if (Webtoon == null || ContainsInDB == null)
+    {
+        <MudText Typo="Typo.h5">로딩중...</MudText>
+    }
+    else
+    {
+        <MudImage Style="width: 230px; height:300px; border-radius: 20px" Src="@Webtoon.Thumbnail"></MudImage>
+        <MudText Style="font-weight: 700">@Webtoon.Title</MudText>
+        <MudText Style="font-size: 0.8rem">@string.Join(", ", Webtoon.Authors)</MudText>
+        if(!ContainsInDB.Value)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="(e)=>StartDownload()">다운로드</MudButton>
+        }
+        else if (Webtoon.IsViewOnly)
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled" OnClick="(e)=>StartDownload()">다운로드</MudButton>
+        }
+        else
+        {
+            <MudButton Color="Color.Primary" Variant="Variant.Filled">이미 추가된 항목입니다.</MudButton>
+        }
+    }
+</div>
+
+@code {
+    [SupplyParameterFromQuery(Name = "webtoonId")]
+    public int? WebtoonId{ get; set; }
+    public Webtoon Webtoon { get; set; }
+    bool? ContainsInDB { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (WebtoonId == null)
+        {
+            return;
+        }
+        Webtoon = DbContext.NaverWebtoons.Where(x => x.ID == WebtoonId).FirstOrDefault();
+        if (Webtoon != null)
+        {
+            ContainsInDB = true;
+        }
+        else
+        {
+            ContainsInDB = false;
+            Webtoon = await api.GetWebtoonAsync(WebtoonId.Value);
+            if (!Webtoon.IsFree)
+                throw new Exception("유료 웹툰은 다운로드가 불가능합니다.");
+        }
+        StateHasChanged();
+    }
+
+    private async Task StartDownload()
+    {
+        var webtoonInDb = (await DbContext.NaverWebtoons.FindAsync(WebtoonId));
+        if (webtoonInDb != null)
+        {
+            webtoonInDb.IsViewOnly = false;
+            DbContext.NaverWebtoons.Update(webtoonInDb);
+        }
+        else
+        {
+            await DbContext.NaverWebtoons.AddAsync(Webtoon);
+        }
+        await DbContext.SaveChangesAsync();
+        Navigation.NavigateTo("/download/list");
+    }
+}

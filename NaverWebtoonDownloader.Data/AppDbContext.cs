@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Sqlite;
 
 using NaverWebtoon = NaverWebtoonDownloader.Entities.Naver.Webtoon;
 using NaverEpisode = NaverWebtoonDownloader.Entities.Naver.Episode;
@@ -12,10 +13,16 @@ public class AppDbContext : DbContext
     {
 
     }
-
+    public AppDbContext(DbContextOptions<AppDbContext> options)
+    : base(options)
+    {
+    }
     protected override void OnConfiguring(DbContextOptionsBuilder options)
     {
-        options.UseSqlite(Constants.CONNECTION_STRING);
+        if (!options.IsConfigured)
+        {
+            options.UseSqlite($"Data Source = appdb.sqlite; Mode=ReadWriteCreate; Cache=Shared;");
+        }
     }
 
     public DbSet<NaverWebtoon> NaverWebtoons { get; set; }
@@ -54,3 +61,4 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
+
