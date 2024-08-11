@@ -48,7 +48,7 @@
     private static List<WebtoonDownloadStatus> WebtoonDownloadStatuses = new List<WebtoonDownloadStatus>();
     public bool IsRunnning => !cts?.IsCancellationRequested ?? false;
 
-    CancellationTokenSource? cts;
+    private static CancellationTokenSource? cts;
 
     protected override async Task OnInitializedAsync()
     {
