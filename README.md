@@ -17,6 +17,8 @@
 .NET MAUI Blazor Hybrid 로 개발된 네이버 웹툰 다운로더입니다.  
 뷰어가 내장되어 있어 다운로드한 웹툰을 바로 볼 수 있습니다.  
 Windows, Android를 지원합니다.  
+[안드로이드 APK 다운로드](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/download/v0.1.0/default.apk)  
+[윈도우 exe ZIP 다운로드](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/download/v0.1.0/win10-x64.zip)
 
 
 ## Windows
