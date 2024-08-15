@@ -1,0 +1,43 @@
+.section_episode_list {
+    clear: both;
+    overflow: hidden;
+}
+
+    .section_episode_list .item {
+        position: relative;
+        height: 56px;
+    }
+
+        .section_episode_list .item .link {
+            display: block;
+            height: 45px;
+            padding: 5px 16px;
+            border-bottom: 1px solid #f7f7f7;
+            background-color: #fff;
+        }
+
+        .section_episode_list .item .thumbnail {
+            float: left;
+            overflow: hidden;
+            width: 76px;
+            height: 45px;
+            margin-right: 11px;
+            border-radius: 2px;
+        }
+
+        .section_episode_list .item .info {
+            overflow: hidden;
+        }
+
+            .section_episode_list .item .info .title {
+                font-size: 14px;
+            }
+
+            .section_episode_list .item .info .detail {
+                font-size: 12px;
+                color: #999;
+            }
+
+                .section_episode_list .item .info .detail .date {
+                    margin-left: 4px;
+                }

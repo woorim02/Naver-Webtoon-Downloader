@@ -1,6 +1,104 @@
-﻿@page "/view/detail"
-<h3>Viewer</h3>
+﻿@page "/view/detail/{WebtoonId:int}/{EpisodeNo:int}"
+@using NaverWebtoonDownloader.Entities.Naver
+@inject NavigationManager Navigation
+@inject AppDbContext DbContext
+
+@using Microsoft.EntityFrameworkCore
+@using NaverWebtoonDownloader
+@using NaverWebtoonDownloader.Data
+@using NaverWebtoonDownloader.Services
+
+<div style="display: flex; flex-direction:column; justify-content:center; align-items: center;">
+    @if (Episode == null)
+    {
+        <p>Loading episode...</p>
+    }
+    else
+    {
+        @foreach (var image in Episode.Images)
+        {
+            <div class="image-container">
+                <img src="@GetImageAsBase64(image)" alt="Episode Image" style="max-width: 100%;" loading="lazy" />
+            </div>
+        }
+    }
+    <div class="navi_area" style="display: flex; justify-content: space-between; padding: 20px; width:100%;">
+        @if (EpisodeNo > 1)
+        {
+            <button onclick="location.href='/view/detail/@WebtoonId/@(EpisodeNo - 1)'" class="link_nav link_prev _moveArticle" style="text-decoration: none; color: inherit; cursor: pointer;">
+                <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" />
+                <span class="ico_comic"></span>이전화
+            </button>
+        }
+        <button onclick="location.href='@($" /view/list/episodes?webtoonId ={WebtoonId}")'" class="link_nav link_list" style="text-decoration: none; color: inherit;">
+            <MudIcon Icon="@Icons.Material.Filled.List" />
+            <span class="ico_comic"></span>목록
+        </button>
+        <button onclick="location.href='/view/detail/@WebtoonId/@(EpisodeNo + 1)'" class="link_nav link_next _moveArticle" style="text-decoration: none; color: inherit; cursor: pointer;">
+            <MudIcon Icon="@Icons.Material.Filled.SkipNext" />
+            다음화<span class="ico_comic"></span>
+        </button>
+    </div>
+</div>
 
 @code {
+    [Parameter]
+    public int WebtoonId { get; set; }
+    [Parameter]
+    public int EpisodeNo { get; set; }
 
+    private Episode? Episode { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // 에피소드를 불러오는 로직을 추가합니다. 예: 로컬 스토리지나 서비스에서 가져오기.
+        // 아래는 로컬 스토리지에서 에피소드를 가져오는 가정입니다.
+
+        Episode = await DbContext.NaverEpisodes
+        .Where(x => x.WebtoonID == WebtoonId && x.No == EpisodeNo)
+        .Include(x => x.Webtoon)
+        .Include(x => x.Images)
+        .FirstOrDefaultAsync();
+
+        if (Episode == null)
+        {
+            Navigation.NavigateTo("/notfound");
+        }
+        StateHasChanged();
+    }
+
+    private string GetImageAsBase64(Image image)
+    {
+        var filePath = BuildImagePath(image);
+        if (System.IO.File.Exists(filePath))
+        {
+            var imageBytes = System.IO.File.ReadAllBytes(filePath);
+            var base64String = Convert.ToBase64String(imageBytes);
+            return $"data:image/jpeg;base64,{base64String}";
+        }
+        return string.Empty; // 이미지가 존재하지 않으면 빈 문자열 반환
+    }
+
+    private string BuildImagePath(Image image)
+    {
+        var baseFolderPath = Preferences.Default.Get<string>("DOWNLOAD_FOLDER_PATH", "");
+        var webtoonFolderName = NameFormater.BuildWebtoonFolderName(image.Webtoon);
+        var episodeFolderName = NameFormater.BuildEpisodeFolderName(image.Episode);
+        var imageFileName = NameFormater.BuildImageFileName(image);
+        return Path.Combine(baseFolderPath, webtoonFolderName, episodeFolderName, imageFileName);
+    }
+
+    private void MoveToPrevEpisode()
+    {
+        if (EpisodeNo > 1)
+        {
+            Navigation.NavigateTo($"/view/detail/{WebtoonId}/{EpisodeNo - 1}");
+        }
+    }
+
+    private void MoveToNextEpisode()
+    {
+        // 다음 에피소드 존재 여부는 로직으로 확인 필요
+        Navigation.NavigateTo($"/view/detail/{WebtoonId}/{EpisodeNo + 1}");
+    }
 }

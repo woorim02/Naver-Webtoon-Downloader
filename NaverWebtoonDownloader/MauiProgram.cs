@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using MudBlazor;
 using MudBlazor.Services;
 using NaverWebtoonDownloader.Apis;
 using NaverWebtoonDownloader.Data;
+using NaverWebtoonDownloader.Services;
 
 namespace NaverWebtoonDownloader
 {
@@ -11,6 +13,7 @@ namespace NaverWebtoonDownloader
         public static MauiApp CreateMauiApp()
         {
             var builder = MauiApp.CreateBuilder();
+            // Preferences 설정
             SetPreferences();
             Directory.CreateDirectory(Preferences.Default.Get("DOWNLOAD_FOLDER_PATH", ""));
             builder
@@ -22,12 +25,16 @@ namespace NaverWebtoonDownloader
 
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
+
+            // 서비스 추가
             builder.Services.AddDbContext<AppDbContext>(options =>
             {
                 options.UseSqlite(Constants.CONNECTION_STRING);
             });
             builder.Services.AddScoped(sp => new HttpClient());
             builder.Services.AddScoped<NaverWebtoonApi>();
+            builder.Services.AddSingleton<IDialogService, DialogService>();
+            builder.Services.AddSingleton<WebtoonDownloadService>();
 
 #if DEBUG
             builder.Services.AddBlazorWebViewDeveloperTools();
@@ -40,8 +47,15 @@ namespace NaverWebtoonDownloader
             using (var scope = app.Services.CreateScope())
             {
                 var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                context.Database.Migrate();
-                context.Database.ExecuteSqlRaw("PRAGMA journal_mode = WAL;");
+
+                // 데이터베이스 존재 여부 확인후 생성
+                var databasePath = Path.Combine(Constants.DataSource);
+                var databaseExists = File.Exists(databasePath);
+                if (!databaseExists)
+                {
+                    context.Database.Migrate();
+                    context.Database.ExecuteSqlRaw("PRAGMA journal_mode = WAL;");
+                }
             }
 
             return app;

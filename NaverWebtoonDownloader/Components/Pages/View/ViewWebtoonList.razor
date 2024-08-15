@@ -1,0 +1,90 @@
+﻿@page "/view/list/webtoons"
+@inject NavigationManager Navigation
+@inject AppDbContext DbContext
+@inject NaverWebtoonDownloader.Apis.NaverWebtoonApi api
+@inject IDialogService DialogService
+@inject IJSRuntime JsRuntime
+@inject IServiceProvider ServiceProvider
+
+@using Microsoft.EntityFrameworkCore
+@using NaverWebtoonDownloader
+@using NaverWebtoonDownloader.Data
+@using NaverWebtoonDownloader.Entities.Naver
+@using NaverWebtoonDownloader.Services
+<MudContainer MaxWidth="MaxWidth.False">
+    <ul>
+        @foreach (var webtoon in Webtoons)
+        {
+            <li class="toon_item" style="padding: 3px">
+                <div style="display:flex; flex-direction: row">
+                    <a href="@($"/view/list/episodes?webtoonId={webtoon.ID}")" style="display:flex; flex-direction: row">
+                        <span style="width: 63px; height:80px; margin-right: 11px">
+                            <img src="@webtoon.Thumbnail" style="width: 63px; height:80px;" alt="@webtoon.Title"/>
+                        </span>
+                        <div class="toon_info" style="overflow: hidden; padding: 5px">
+                            <span class="toon_name"><strong>@webtoon.Title</strong></span>
+                            <div class="sub_info ellipsis">
+                                <span class="col author">@JoinAuthors(webtoon.Authors)</span>
+                            </div>
+                            <div class="sub_info">
+                                <span class="if1">@(webtoon.Episodes.LastOrDefault()?.Date.ToString("yyyy-MM-dd") ?? "-")</span>
+                            </div>
+                        </div>
+                    </a>
+                    <MudSpacer />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" OnClick="(async (args) => await DeleteWebtoon(webtoon))"></MudIconButton>
+                </div>
+            </li>
+        }
+    </ul>
+</MudContainer>
+
+@code {
+    private List<Webtoon> Origins = new List<Webtoon>();
+    private List<Webtoon> Webtoons = new List<Webtoon>();
+    private string searchValue = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Origins = await DbContext.NaverWebtoons
+        .Include(w => w.Episodes)
+        .ToListAsync();
+        Webtoons = Origins;
+    }
+
+    private async Task<IEnumerable<string>> Search(string value, CancellationToken token)
+    {
+        if (string.IsNullOrEmpty(value))
+        {
+            Webtoons = Origins;
+            return new string[0];
+        }
+        // 필터링된 웹툰 목록 업데이트
+        Webtoons = Origins.Where(x => x.Title.Contains(value, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        // 검색어에 맞는 제목만 반환
+        return Webtoons.Select(x => x.Title).Distinct().ToArray();
+    }
+
+    private async Task DeleteWebtoon(Webtoon webtoon)
+    {
+        var parameters = new DialogParameters
+        {
+            { "ContentText", "웹툰 데이터를 삭제할까요? 다운로드된 파일은 삭제되지 않습니다." },
+            { "ButtonText", "Delete" },
+            { "Color", Color.Error }
+        };
+
+        var dialog = DialogService.Show<DialogTemplate>("Delete Confirmation", parameters);
+        var result = await dialog.Result;
+
+        if (!result?.Canceled ?? false)
+        {
+            Webtoons.Remove(webtoon);
+            DbContext.NaverWebtoons.Remove(webtoon);
+            await DbContext.SaveChangesAsync();
+        }
+    }
+    string JoinAuthors(IEnumerable<string> strings)
+    => string.Join(", ", strings);
+}

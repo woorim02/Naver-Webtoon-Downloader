@@ -1,0 +1,14 @@
+.toon_info span {
+    font-size: 14px;
+    line-height: 19px;
+}
+
+.sub_info {
+    font-size: 0.8rem;
+}
+
+.toon_item {
+    border: 0;
+    position: relative;
+    height: 90px !important
+}

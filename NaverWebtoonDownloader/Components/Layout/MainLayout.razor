@@ -20,7 +20,7 @@
     <MudTabs Elevation="2" MinimumTabWidth="30px" Centered="true" @bind-ActivePanelIndex="_selectedIndex">
         <MudTabPanel OnClick="@((e) => OnTabClick("/"))" Text="홈" Icon="@Icons.Material.Filled.Home"></MudTabPanel>
         <MudTabPanel OnClick="@((e) => OnTabClick("/download/list"))" Text="다운로드" Icon="@Icons.Material.Filled.Download"></MudTabPanel>
-        <MudTabPanel OnClick="@((e) => OnTabClick("/view/list"))" Text="뷰어" Icon="@Icons.Material.Filled.List"></MudTabPanel>
+        <MudTabPanel OnClick="@((e) => OnTabClick("/view/list/webtoons"))" Text="뷰어" Icon="@Icons.Material.Filled.List"></MudTabPanel>
         <MudTabPanel OnClick="@((e) => OnTabClick("/settings"))" Text="설정" Icon="@Icons.Material.Filled.Settings"></MudTabPanel>
     </MudTabs>
 </MudLayout>

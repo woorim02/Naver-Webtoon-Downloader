@@ -63,10 +63,13 @@
     private bool coerceValue;
     private string searchValue = "";
 
-    private bool isFirstLoad = true;
+    private static bool isFirstLoad = true;
     protected override async Task OnInitializedAsync()
     {
-        await DaySelected(_selectedDay);
+        _ = Task.Run(async () => {
+            await DaySelected(_selectedDay);
+            await InvokeAsync(StateHasChanged);
+        });
         if (isFirstLoad)
         {
             _ = Task.Run(async () =>
@@ -76,7 +79,8 @@
                 if (res.IsSuccessStatusCode)
                 {
                     string ver = await res.Content.ReadAsStringAsync();
-                    var comp = AppInfo.Current.Version.CompareTo(ver);
+                    var currentVer = AppInfo.Current.Version;
+                    var comp = currentVer.CompareTo(new Version(ver));
                     if (comp < 0)
                     {
                         await JSRuntime.InvokeVoidAsync("alert", $"최신 버전 v{ver}이 존재합니다.");

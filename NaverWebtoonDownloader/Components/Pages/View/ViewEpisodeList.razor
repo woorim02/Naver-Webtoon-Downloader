@@ -1,0 +1,67 @@
+﻿@page "/view/list/episodes"
+@inject NavigationManager Navigation
+@inject AppDbContext DbContext
+@inject NaverWebtoonDownloader.Apis.NaverWebtoonApi api
+@inject IDialogService DialogService
+@inject IJSRuntime JsRuntime
+@inject IServiceProvider ServiceProvider
+
+@using Microsoft.EntityFrameworkCore
+@using NaverWebtoonDownloader
+@using NaverWebtoonDownloader.Data
+@using NaverWebtoonDownloader.Entities.Naver
+@using NaverWebtoonDownloader.Services
+
+<ul class="section_episode_list">
+    @if (webtoon is not null)
+    {
+        @if(webtoon.Episodes is null || webtoon.Episodes.Count == 0)
+        {
+            <h3>웹툰 다운로드를 먼저 해 주세요</h3>
+        }
+        else
+        {
+            @foreach (var episode in webtoon.Episodes)
+            {
+                <li class="item" data-title-id="@episode.WebtoonID" data-no="@episode.No">
+                    <a href="/view/detail/@episode.WebtoonID/@episode.No" class="link">
+                        <div class="thumbnail">
+                            <img src="@episode.Thumbnail" width="76" height="45" alt="@episode.Title" />
+                        </div>
+                        <div class="info">
+                            <strong class="title">
+                                <span class="name"><strong>@episode.Title</strong></span>
+                            </strong>
+                            <div class="detail">
+                                <span class="ico_comic ico_score"></span>
+                                <span class="date">@episode.Date.ToString("yyyy.MM.dd")</span>
+                                <MudIcon Icon="@Icons.Material.Filled.Star" Style="width: 0.9rem; height: 0.9rem; color: #f03e3e"/>
+                                <span class="score" style="color:#f03e3e">@episode.StarScore.ToString("F2")</span>
+                            </div>
+                        </div>
+                    </a>
+                </li>
+            }
+        }
+    }
+</ul>
+
+@code {
+    [SupplyParameterFromQuery(Name = "webtoonId")]
+    public int? WebtoonId { get; set; }
+
+    private Webtoon? webtoon;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (WebtoonId == null)
+        {
+            return;
+        }
+        webtoon = DbContext.NaverWebtoons
+            .Where(x => x.ID == WebtoonId)
+            .Include(x => x.Episodes )
+            .FirstOrDefault();
+        StateHasChanged();
+    }
+}
