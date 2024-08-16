@@ -2,6 +2,7 @@
 @using NaverWebtoonDownloader.Entities.Naver
 @inject NavigationManager Navigation
 @inject AppDbContext DbContext
+@inject IJSRuntime JSRuntime
 
 @using Microsoft.EntityFrameworkCore
 @using NaverWebtoonDownloader
@@ -18,7 +19,7 @@
         @foreach (var image in Episode.Images)
         {
             <div class="image-container">
-                <img src="@GetImageAsBase64(image)" alt="Episode Image" style="max-width: 100%;" loading="lazy" />
+                <img src="@(GetImageAsBase64(image))" alt="Episode Image" style="max-width: 100%;" loading="lazy" />
             </div>
         }
     }
@@ -51,9 +52,6 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // 에피소드를 불러오는 로직을 추가합니다. 예: 로컬 스토리지나 서비스에서 가져오기.
-        // 아래는 로컬 스토리지에서 에피소드를 가져오는 가정입니다.
-
         Episode = await DbContext.NaverEpisodes
         .Where(x => x.WebtoonID == WebtoonId && x.No == EpisodeNo)
         .Include(x => x.Webtoon)
@@ -62,7 +60,7 @@
 
         if (Episode == null)
         {
-            Navigation.NavigateTo("/notfound");
+            await JSRuntime.InvokeVoidAsync("alert", $"마지막 페이지입니다.");
         }
         StateHasChanged();
     }
@@ -98,7 +96,6 @@
 
     private void MoveToNextEpisode()
     {
-        // 다음 에피소드 존재 여부는 로직으로 확인 필요
         Navigation.NavigateTo($"/view/detail/{WebtoonId}/{EpisodeNo + 1}");
     }
 }

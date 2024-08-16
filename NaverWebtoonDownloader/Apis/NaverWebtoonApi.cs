@@ -15,6 +15,11 @@ public class NaverWebtoonApi
 
     private readonly HttpClient _client;
 
+    /// <summary>
+    /// 공식 API에서 불러온 웹툰 엔티티를 반환합니다.
+    /// </summary>
+    /// <param name="webtoonId"></param>
+    /// <returns></returns>
     public async Task<Webtoon> GetWebtoonAsync(int webtoonId)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, $"https://comic.naver.com/api/article/list/info?titleId={webtoonId}");
@@ -25,25 +30,23 @@ public class NaverWebtoonApi
     }
 
     /// <summary>
+    /// 사설 API에서 불러온 웹툰 엔티티 목록을 반환합니다. <br/>
     /// 리턴값의 episode가 Empty List이니 주의
     /// </summary>
     /// <param name="day"></param>
     /// <returns></returns>
-    public async Task<List<Webtoon>> GetWebtoonsAsync(DayOfWeek day)
+    public async Task<List<Webtoon>> GetWebtoonsAsync(DayOfWeek day, int page = 1)
     {
-        var webtoonDtos = new List<WebtoonDto>();
-        const int maxPages = 100; // 최대 페이지 수 설정
-        for (int i = 1; i < maxPages; i++)
-        {
-            var request = new HttpRequestMessage(HttpMethod.Get, $"https://korea-webtoon-api-cc7dda2f0d77.herokuapp.com/webtoons?provider=NAVER&page={i}&perPage=100&sort=ASC&updateDay={day.ToString().Substring(0, 3).ToUpper()}");
-            var response = await _client.SendAsync(request);
-            var content = await response.Content.ReadAsStringAsync();
-            var webtoonDtoContent = JsonConvert.DeserializeObject<WebtoonListDto>(content);
-            webtoonDtos.AddRange(webtoonDtoContent.Webtoons);
-            if (webtoonDtoContent!.IsLastPage)
-                break;
-        }
+        // 페이지당 100개, ASC 정렬
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://korea-webtoon-api-cc7dda2f0d77.herokuapp.com/webtoons?provider=NAVER&page={page}&perPage=100&sort=ASC&updateDay={day.ToString().Substring(0, 3).ToUpper()}");
+        var response = await _client.SendAsync(request);
+        var content = await response.Content.ReadAsStringAsync();
 
+        // dto 변환
+        var webtoonDtoContent = JsonConvert.DeserializeObject<WebtoonListDto>(content);
+        var webtoonDtos = webtoonDtoContent.Webtoons;
+
+        // 엔티티 변환
         var webtoons = new List<Webtoon>();
         foreach (var dto in webtoonDtos)
         {
@@ -63,20 +66,25 @@ public class NaverWebtoonApi
         }
         return webtoons;
     }
-
+    /// <summary>
+    /// 사설 API에서 불러온 웹툰 엔티티 목록을 반환합니다. <br/>
+    /// 리턴값의 episode가 Empty List이니 주의
+    /// </summary>
+    /// <returns></returns>
     public async Task<List<Webtoon>> GetWebtoonsAsync(string keyword)
     {
-        var webtoonDtos = new List<WebtoonDto>();
-        const int maxPages = 100; // 최대 페이지 수 설정
-
+        // 페이지당 100개, 키워드 검색
         var request = new HttpRequestMessage(HttpMethod.Get,
             $"https://korea-webtoon-api-cc7dda2f0d77.herokuapp.com/webtoons" +
             $"?provider=NAVER&page=1&perPage=100&sort=ASC&keyword={Uri.UnescapeDataString(keyword)}");
         var response = await _client.SendAsync(request);
         var content = await response.Content.ReadAsStringAsync();
-        var webtoonDtoContent = JsonConvert.DeserializeObject<WebtoonListDto>(content);
-        webtoonDtos.AddRange(webtoonDtoContent.Webtoons);
 
+        // dto 변환
+        var webtoonDtoContent = JsonConvert.DeserializeObject<WebtoonListDto>(content);
+        var webtoonDtos = webtoonDtoContent.Webtoons;
+
+        // 엔티티 변환
         var webtoons = new List<Webtoon>();
         foreach (var dto in webtoonDtos)
         {
@@ -98,6 +106,7 @@ public class NaverWebtoonApi
     }
 
     /// <summary>
+    /// 공식 API에서 불러온 애피소드 리스트를 반환합니다. 미리보기 회차 제외 <br/>
     /// ASC정렬, webtoon = null, images = empty List
     /// </summary>
     /// <param name="webtoonId"></param>
@@ -109,11 +118,14 @@ public class NaverWebtoonApi
         var response = await _client.SendAsync(request);
         var content = await response.Content.ReadAsStringAsync();
 
+        // dto 변환
         var articleList = JsonConvert.DeserializeObject<ArticleListDto>(content);
 
+        // 엔티티 변환
         var episodes = new List<Episode>();
         foreach (var article in articleList.articleList)
         {
+            // 미리보기 회차 제외
             if(article.serviceDateDescription.Contains("무료"))
                 continue;
             var episode = new Episode()
@@ -133,11 +145,13 @@ public class NaverWebtoonApi
 
     public async Task<int> GetMaxEpisodeNo(int webtoonId)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"https://comic.naver.com/api/article/list?titleId={webtoonId}");
+        // 회차 목록 불러오기
+        var request = new HttpRequestMessage(HttpMethod.Get, $"https://comic.naver.com/api/article/list?titleId={webtoonId}&page=1&sort=DESC");
         var response = await _client.SendAsync(request);
         var content = await response.Content.ReadAsStringAsync();
         var articleList = JsonConvert.DeserializeObject<ArticleListDto>(content);
-        return articleList.pageInfo.totalRows;
+        // 회차 목록에서 가장 최신회차 번호 불러오기
+        return articleList.articleList.Where(x => !x.serviceDateDescription.Contains("무료")).Select(x => x.no).Max();
     }
 
     public async Task<List<Image>> GetImagesAsync(int webtoonId, int episodeNo)
@@ -177,6 +191,7 @@ public class NaverWebtoonApi
     public async Task<byte[]> GetImageAsync(string url)
     {
         var request = new HttpRequestMessage(HttpMethod.Get, url);
+        // user-agent, referer 필수
         request.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36");
         request.Headers.Add("Referer", "https://comic.naver.com/webtoon/detail");
         var response = await _client.SendAsync(request);

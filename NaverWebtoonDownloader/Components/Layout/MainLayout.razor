@@ -21,7 +21,6 @@
         <MudTabPanel OnClick="@((e) => OnTabClick("/"))" Text="홈" Icon="@Icons.Material.Filled.Home"></MudTabPanel>
         <MudTabPanel OnClick="@((e) => OnTabClick("/download/list"))" Text="다운로드" Icon="@Icons.Material.Filled.Download"></MudTabPanel>
         <MudTabPanel OnClick="@((e) => OnTabClick("/view/list/webtoons"))" Text="뷰어" Icon="@Icons.Material.Filled.List"></MudTabPanel>
-        <MudTabPanel OnClick="@((e) => OnTabClick("/settings"))" Text="설정" Icon="@Icons.Material.Filled.Settings"></MudTabPanel>
     </MudTabs>
 </MudLayout>
 
@@ -31,6 +30,7 @@
     protected override void OnInitialized()
     {
         SetTabIndexBasedOnUri(Navigation.Uri);
+        // Url에 따라 탭도 바뀌게 수정
         Navigation.LocationChanged += (sender, args) =>
         {
             SetTabIndexBasedOnUri(args.Location);

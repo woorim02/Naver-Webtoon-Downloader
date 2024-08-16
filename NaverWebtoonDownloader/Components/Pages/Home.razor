@@ -3,8 +3,9 @@
 @inject HttpClient client
 @inject IJSRuntime JSRuntime
 @using NaverWebtoonDownloader.Entities.Naver
+@using System.Reflection
 
-<MudContainer MaxWidth="MaxWidth.False">
+<MudContainer MaxWidth="MaxWidth.False" Style="padding: 10px">
     <MudTabs @bind-ActivePanelIndex="SelectedIndex" MinimumTabWidth="20px" Elevation="4" Rounded="true" Centered="true" Color="@Color.Primary">
         <MudTabPanel Text="일" />
         <MudTabPanel Text="월"/>
@@ -79,7 +80,8 @@
                 if (res.IsSuccessStatusCode)
                 {
                     string ver = await res.Content.ReadAsStringAsync();
-                    var currentVer = AppInfo.Current.Version;
+                    var assembly = Assembly.GetExecutingAssembly();
+                    var currentVer = assembly.GetName().Version;
                     var comp = currentVer.CompareTo(new Version(ver));
                     if (comp < 0)
                     {
