@@ -8,19 +8,18 @@
 ![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=csharp&logoColor=white)
 ![MAUI](https://img.shields.io/badge/MAUI-%235C2D91.svg?style=for-the-badge&logo=MAUI&logoColor=white)
 ![Blazor](https://img.shields.io/badge/blazor-%235C2D91.svg?style=for-the-badge&logo=blazor&logoColor=white)  
-![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)  
 
 ![Android](https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white)
 ![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)  
 
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fwoorim02%2FNaver-Webtoon-Downloader%2Ftree%2Fv0.1.2&count_bg=%2379C83D&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/woorim02/Naver-Webtoon-Downloader?label=latest&style=flat-square)](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/latest)
 [![GitHub All Releases](https://img.shields.io/github/downloads/woorim02/Naver-Webtoon-Downloader/total?label=downloads&style=flat-square)](https://github.com/woorim02/Naver-Webtoon-Downloader/releases)  
 
 .NET MAUI Blazor Hybrid 로 개발된 네이버 웹툰 다운로더입니다.  
 뷰어가 내장되어 있어 다운로드한 웹툰을 바로 볼 수 있습니다.  
-Windows, Android를 지원합니다.  
-[안드로이드 APK 다운로드](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/download/v0.1.1/NaverWebtoonDownloader.apk)  
-[윈도우 exe ZIP 다운로드](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/download/v0.1.1/NaverWebtoonDownloader-win10-x64.zip)
+[안드로이드 APK 다운로드](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/download/v0.1.2/NaverWebtoonDownloader.apk)  
+[윈도우 exe ZIP 다운로드](https://github.com/woorim02/Naver-Webtoon-Downloader/releases/download/v0.1.2/NaverWebtoonDownloader-win10-x64.zip)
 
 
 ## Android
