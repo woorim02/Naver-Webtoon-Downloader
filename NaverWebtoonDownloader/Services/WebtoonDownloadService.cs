@@ -90,6 +90,7 @@ namespace NaverWebtoonDownloader.Services
                     catch (Exception e)
                     {
                         webtoon.StatusText = "오류 발생";
+                        File.WriteAllText(Constants.ErrorLogPath, e.ToString());
                         break;
                     }
                 }
